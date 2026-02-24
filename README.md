@@ -1,4 +1,4 @@
-#ZIGMAN — Zig Version Manager
+# ZIGMAN — Zig Version Manager
 
 ZIGMAN is a lightweight, high-performance Zig version manager written entirely in Zig. It allows you to seamlessly switch between different compiler versions, ensuring your projects always build with the correct toolchain.
 ##🚀 Features
@@ -9,12 +9,12 @@ ZIGMAN is a lightweight, high-performance Zig version manager written entirely i
 
     Lightweight: Minimal overhead and lightning-fast command execution.
 
-##🛠 Installation
-###Prerequisites
+## 🛠 Installation
+### Prerequisites
 
     Zig Compiler (to build from source)
 
-###Building from Source
+### Building from Source
 
     Clone the repository:
     Bash
@@ -32,7 +32,7 @@ ZIGMAN is a lightweight, high-performance Zig version manager written entirely i
 
     mv ./zigman /usr/local/bin/
 
-##📖 Usage
+## 📖 Usage
 
 The basic syntax for ZIGMAN is:
 Bash
@@ -58,7 +58,7 @@ Code Structure
 
     Command Enum: Defines the internal API for supported actions.
 
-##🤝 Contributing
+## 🤝 Contributing
 
 Contributions are welcome! If you'd like to help implement the file system logic for version switching or the HTTP fetching for fetch, feel free to fork the repo and submit a PR.
 
@@ -72,7 +72,7 @@ Contributions are welcome! If you'd like to help implement the file system logic
 
     Open a Pull Request
 
-##👤 Author
+## 👤 Author
 
 Mohammad Alamsyah (mohalem)
 
