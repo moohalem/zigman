@@ -1,7 +1,7 @@
 # ZIGMAN — Zig Version Manager
 
 ZIGMAN is a lightweight, high-performance Zig version manager written entirely in Zig. It allows you to seamlessly switch between different compiler versions, ensuring your projects always build with the correct toolchain.
-##🚀 Features
+## 🚀 Features
 
     Version Switching: Quickly toggle between stable and nightly Zig releases.
 
