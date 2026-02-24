@@ -1,6 +1,8 @@
 const std = @import("std");
 
-const APP_VERSION = "v0.1.0";
+const cmd_fetch = @import("commands/fetch.zig");
+
+const APP_VERSION = "v0.0.1";
 
 const Command = enum {
     install,
@@ -76,9 +78,7 @@ pub fn main() !void {
             .list => {
                 std.debug.print("*Listing installed versions...\n", .{});
             },
-            .fetch => {
-                std.debug.print("*Fetching list of available versions...\n", .{});
-            },
+            .fetch => try cmd_fetch.fetchVersions(allocator),
             .use => {
                 if (args.len < 3) {
                     std.debug.print("Error: 'Use' requires version argument", .{});
@@ -90,7 +90,7 @@ pub fn main() !void {
                 std.debug.print("{s}", .{HELP_TEXT});
             },
             .version => {
-                std.debug.print("Zigman version {s}\n", .{APP_VERSION});
+                std.debug.print("Zigman version: {s}\n", .{APP_VERSION});
             },
         }
     } else {

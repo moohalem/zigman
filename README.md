@@ -40,14 +40,14 @@ Bash
 zigman [command] [arguments]
 
 Available Commands
-Command	Description	Example
-install	Download and install a specific version	zigman install 0.11.0
-uninstall	Remove a previously installed version	zigman uninstall 0.10.1
-use	Switch the active Zig version	zigman use 0.11.0
-list	Show all installed versions	zigman list
-fetch	See what versions are available online	zigman fetch
-help	Display usage information	zigman help
-version	Display the current ZIGMAN version	zigman version
+Command	-- Description --	Example
+install	-- Download and install a specific version -- zigman install 0.11.0
+uninstall	-- Remove a previously installed version	-- zigman uninstall 0.10.1
+use	-- Switch the active Zig version	-- zigman use 0.11.0
+list	-- Show all installed versions	-- zigman list
+fetch	-- See what versions are available online	-- zigman fetch
+help	-- Display usage information	-- zigman help
+version	-- Display the current ZIGMAN version	-- zigman version
 
 ##🏗 Project Architecture
 
