@@ -3,15 +3,15 @@
 ZIGMAN is a lightweight, high-performance Zig version manager written entirely in Zig. It allows you to seamlessly switch between different compiler versions, ensuring your projects always build with the correct toolchain.
 ## 🚀 Features
 
-    **Version Switching:** Quickly toggle between stable and nightly Zig releases using symlinks.
-
-    **Zero Dependencies:** Built using only the Zig Standard Library. No system tar, curl, or unzip required.
-
-    **Native Extraction:** Downloads and decompresses .tar.xz archives natively in memory.
-
-    **Custom Mirrors:** Configurable via ~/.zigman/config.json to support community mirrors and alternative download sources.
-
-    **Smart Uninstalls:** Easily remove old versions using a dynamically numbered list.
+  **Version Switching:** Quickly toggle between stable and nightly Zig releases using symlinks.
+  
+  **Zero Dependencies:** Built using only the Zig Standard Library. No system tar, curl, or unzip required.
+  
+  **Native Extraction:** Downloads and decompresses .tar.xz archives natively in memory.
+  
+  **Custom Mirrors:** Configurable via ~/.zigman/config.json to support community mirrors and alternative download sources.
+  
+  **Smart Uninstalls:** Easily remove old versions using a dynamically numbered list.
 
 ## ☕ Donate
 
@@ -23,7 +23,6 @@ If you find this tool helpful, consider buying me a coffee!
 ### Option 1: Quick Install (Recommended)
 
 You can install Zigman and automatically configure your PATH by running our setup script:
-Bash
 
 `curl -sL https://raw.githubusercontent.com/mohalem/zigman/main/install.sh | bash`
 
@@ -32,24 +31,22 @@ Bash
 If you already have Zig installed and want to compile ZIGMAN yourself:
 
     Clone the repository:
-    Bash
-
     git clone https://github.com/mohalem/zigman.git
     cd zigman
-
+  
     Build the optimized binary:
-    Bash
-
     zig build -Doptimize=ReleaseFast
-
-    Run the manual setup:
-    Copy the resulting binary from ./zig-out/bin/zigman to a directory in your PATH (e.g., ~/.local/bin/ or /usr/local/bin/).
-
+  
+    Make directory in $HOME:
+    mkdir -p ~/.zigman/app
+    
+    Copy the resulting binary from ./zig-out/bin/zigman to ~/.zigman/app
+    
+    Add ~/.zigman/app to $PATH
+    
 ## 📖 Usage
 
 The basic syntax for ZIGMAN is:
-Bash
-
 zigman [command] [arguments]
 
 ### Available Commands
@@ -99,4 +96,4 @@ Mohammad Alamsyah (moohalem)
 
     Email: mohalem.public@gmail.com
 
-    GitHub: @mohalem
+    GitHub: @moohalem
