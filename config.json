@@ -1,0 +1,7 @@
+{
+  "fetchVersionUrl": "https://ziglang.org/download/index.json",
+  "mirrorListUrl": "https://ziglang.org/download/community-mirrors.txt",
+  "minisignPubKey": "RWSGOq2NVecA2UPNdBUZykf1CCb147pkmdtYxgb3Ti+JO/wCYvhbAb/U",
+  "versionMapUrl": "https://ziglang.org/download/index.json",
+  "zlsVersionMapUrl": "https://releases.zigtools.org/"
+}
