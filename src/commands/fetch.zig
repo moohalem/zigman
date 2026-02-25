@@ -1,37 +1,75 @@
 const std = @import("std");
 
 pub fn fetchVersions(allocator: std.mem.Allocator) !void {
-    // Initialize the HTTP Client
+    // ==========================================
+    // STEP 1: Resolve Paths and Open ~/.zigman/
+    // ==========================================
+    const home_dir = try std.process.getEnvVarOwned(allocator, "HOME");
+    defer allocator.free(home_dir);
+
+    const zigman_path = try std.fs.path.join(allocator, &[_][]const u8{ home_dir, ".zigman" });
+    defer allocator.free(zigman_path);
+
+    var zigman_dir = try std.fs.cwd().makeOpenPath(zigman_path, .{});
+    defer zigman_dir.close();
+
+    // ==========================================
+    // STEP 2: Read and Parse config.json
+    // ==========================================
+    const config_bytes = zigman_dir.readFileAlloc(allocator, "config.json", 1024 * 1024) catch |err| {
+        std.debug.print("Error: Could not read ~/.zigman/config.json. Ensure it exists.\n", .{});
+        return err;
+    };
+    defer allocator.free(config_bytes);
+
+    const config_parsed = try std.json.parseFromSlice(std.json.Value, allocator, config_bytes, .{});
+    defer config_parsed.deinit();
+
+    // Safely extract the versionMapUrl
+    const url_val = config_parsed.value.object.get("versionMapUrl") orelse {
+        std.debug.print("Error: 'versionMapUrl' not found in config.json\n", .{});
+        return error.InvalidConfig;
+    };
+    const url = url_val.string;
+
+    // ==========================================
+    // STEP 3: Fetch the JSON from the Dynamic URL
+    // ==========================================
     var client: std.http.Client = .{ .allocator = allocator };
     defer client.deinit();
 
-    const url = "https://ziglang.org/download/index.json";
-
-    // --- ZIG 0.15 CHANGE HERE ---
-    // We now use the Allocating Writer to dynamically buffer the HTTP stream
     var response_body: std.io.Writer.Allocating = .init(allocator);
     defer response_body.deinit();
 
     std.debug.print("* Fetching available versions from {s}...\n", .{url});
 
-    // Perform the HTTP GET request
-    const fetch_res = try client.fetch(.{
+    const fetch_buffer = try client.fetch(.{
         .location = .{ .url = url },
         .method = .GET,
-        // Pass a pointer to the generic writer interface
         .response_writer = &response_body.writer,
     });
 
-    if (fetch_res.status != .ok) {
-        std.debug.print("Error: Failed to fetch. HTTP Status: {}\n", .{fetch_res.status});
+    if (fetch_buffer.status != .ok) {
+        std.debug.print("Error: Failed to fetch. HTTP Status: {}\n", .{fetch_buffer.status});
         return error.HttpFetchFailed;
     }
 
-    // Extract the raw bytes we just downloaded into a slice
     const body_bytes = try response_body.toOwnedSlice();
-    defer allocator.free(body_bytes); // We must free the slice when done
+    defer allocator.free(body_bytes);
 
-    // Parse the JSON into a dynamic DOM-like structure
+    // ==========================================
+    // STEP 4: Save to versions.json (Overwrites old)
+    // ==========================================
+    // std.fs.Dir.createFile truncates by default, cleanly replacing old files
+    var version_file = try zigman_dir.createFile("versions.json", .{});
+    defer version_file.close();
+
+    try version_file.writeAll(body_bytes);
+    std.debug.print("* Saved index to ~/.zigman/versions.json\n", .{});
+
+    // ==========================================
+    // STEP 5: Parse and Display the Output
+    // ==========================================
     const parsed = try std.json.parseFromSlice(std.json.Value, allocator, body_bytes, .{});
     defer parsed.deinit();
 
@@ -43,12 +81,10 @@ pub fn fetchVersions(allocator: std.mem.Allocator) !void {
 
     std.debug.print("\n--- Available Zig Versions ---\n", .{});
 
-    // Iterate over the keys to print the versions
     var it = root.object.iterator();
     while (it.next()) |entry| {
         const version_name = entry.key_ptr.*;
 
-        // Skip the "master" build if you only want stable releases
         if (std.mem.eql(u8, version_name, "master")) continue;
 
         std.debug.print("- {s}\n", .{version_name});

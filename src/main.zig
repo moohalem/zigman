@@ -1,8 +1,12 @@
 const std = @import("std");
 
 const cmd_fetch = @import("commands/fetch.zig");
+const cmd_install = @import("commands/install.zig");
+const cmd_list = @import("commands/list.zig");
+const cmd_uninstall = @import("commands/uninstall.zig");
+const cmd_use = @import("commands/use.zig");
 
-const APP_VERSION = "v0.0.1";
+const APP_VERSION = "v1.0.0";
 
 const Command = enum {
     install,
@@ -30,10 +34,10 @@ const HELP_TEXT =
     \\      v0.1.0
     \\
     \\DESCRIPTION:
-    \\      A simple Zig version manager. Written in Zig.
+    \\      A very simple Zig version manager. Written in Zig.
     \\
     \\COMMANDS:
-    \\      install <version> - Install a specific Zig version
+    \\      install <version> [optional -f or --force flag] - Install a specific Zig version
     \\      uninstall <version> - Uninstall a specific Zig version
     \\      list - List installed Zig versions
     \\      fetch - Fetch list of available Zig versions
@@ -42,7 +46,7 @@ const HELP_TEXT =
     \\      version | v - Display the current Zig version
     \\
     \\AUTHOR:
-    \\      Mohammad Alamsyah/mohalem <mohalem.public@gmail.com>
+    \\      Mohammad Alamsyah/moohalem <mohalem.public@gmail.com>
 ;
 
 pub fn main() !void {
@@ -63,28 +67,40 @@ pub fn main() !void {
         switch (cmd) {
             .install => {
                 if (args.len < 3) {
-                    std.debug.print("Error: 'Install' requires version argument", .{});
+                    std.debug.print("Error: 'Install' requires version argument\n", .{});
                     return;
                 }
-                std.debug.print("*Installing version {s}...\n", .{args[2]});
+                const version = args[2];
+
+                // Simple check for the force flag
+                var force = false;
+                if (args.len >= 4) {
+                    if (std.mem.eql(u8, args[3], "-f") or std.mem.eql(u8, args[3], "--force")) {
+                        force = true;
+                    }
+                }
+
+                try cmd_install.execute(allocator, version, force);
             },
             .uninstall => {
                 if (args.len < 3) {
-                    std.debug.print("Error: 'Uninstall' requires version argument", .{});
+                    std.debug.print("Error: 'Uninstall' requires a number or version argument", .{});
                     return;
                 }
-                std.debug.print("*Uninstalling version {s}...\n", .{args[2]});
+                const target = args[2];
+                try cmd_uninstall.execute(allocator, target);
             },
             .list => {
-                std.debug.print("*Listing installed versions...\n", .{});
+                try cmd_list.execute(allocator);
             },
             .fetch => try cmd_fetch.fetchVersions(allocator),
             .use => {
                 if (args.len < 3) {
-                    std.debug.print("Error: 'Use' requires version argument", .{});
+                    std.debug.print("Error: 'Use' requires version argument\n", .{});
                     return;
                 }
-                std.debug.print("*Using version {s}...\n", .{args[2]});
+                const version = args[2];
+                try cmd_use.execute(allocator, version);
             },
             .help => {
                 std.debug.print("{s}", .{HELP_TEXT});

@@ -9,6 +9,10 @@ ZIGMAN is a lightweight, high-performance Zig version manager written entirely i
 
     Lightweight: Minimal overhead and lightning-fast command execution.
 
+## Donate
+
+[Paypal](https://paypal.me/MohammadAlamsyah)
+
 ## 🛠 Installation
 ### Prerequisites
 
@@ -39,7 +43,7 @@ Bash
 
 zigman [command] [arguments]
 
-Available Commands
+### Available Commands
 Command	-- Description --	Example
 install	-- Download and install a specific version -- zigman install 0.11.0
 uninstall	-- Remove a previously installed version	-- zigman uninstall 0.10.1
@@ -49,7 +53,7 @@ fetch	-- See what versions are available online	-- zigman fetch
 help	-- Display usage information	-- zigman help
 version	-- Display the current ZIGMAN version	-- zigman version
 
-##🏗 Project Architecture
+## 🏗 Project Architecture
 
 ZIGMAN is designed with simplicity in mind. The current implementation handles CLI routing via a tagged union (Enum) and the Zig std.meta library.
 Code Structure
@@ -74,6 +78,6 @@ Contributions are welcome! If you'd like to help implement the file system logic
 
 ## 👤 Author
 
-Mohammad Alamsyah (mohalem)
+Mohammad Alamsyah (moohalem)
 
     Email: mohalem.public@gmail.com
