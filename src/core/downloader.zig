@@ -13,13 +13,18 @@ pub fn downloadFile(allocator: std.mem.Allocator, dir: std.fs.Dir, url: []const 
 
     std.debug.print("    Downloading... (this may take a moment)\n", .{});
 
-    const fetch_res = try client.fetch(.{
+    const fetch_res = client.fetch(.{
         .location = .{ .url = url },
         .method = .GET,
+        .redirect_behavior = @enumFromInt(5), // Follow up to 5 redirects
         .response_writer = &file_writer.interface,
-    });
+    }) catch |err| {
+        return err; // Forward fetch error
+    };
 
-    if (fetch_res.status != .ok) return error.DownloadFailed;
+    if (fetch_res.status != .ok) {
+        return error.DownloadFailed;
+    }
 
     try file_writer.interface.flush();
 }

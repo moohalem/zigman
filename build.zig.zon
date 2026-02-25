@@ -1,14 +1,16 @@
 .{
     .name = .zigman,
-    .version = "1.0.0",
+    .version = "1.1.0",
     .fingerprint = 0xbf4b1b488528fa82,
     .minimum_zig_version = "0.15.1",
 
     // You have no external dependencies yet, so this stays empty.
-    .dependencies = .{},
-
-    // These are the files that get packaged if someone downloads your project
-    // via the Zig package manager.
+    .dependencies = .{
+        .minizign = .{
+            .url = "git+https://github.com/jedisct1/zig-minisign#6b1139e459a4e9cfd569b05ed7207534ea553f91",
+            .hash = "minizign-0.1.9-gg18ce4dAQBnc-4MUT316AG_f9X2l0ZvUzDOkjmS_iIm",
+        },
+    },
     .paths = .{
         "build.zig",
         "build.zig.zon",

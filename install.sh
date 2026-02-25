@@ -1,10 +1,6 @@
 #!/bin/bash
 set -e
 
-# ==========================================
-# CONFIGURATION
-# Update this to match your actual GitHub username and repository!
-# ==========================================
 GITHUB_REPO="moohalem/zigman"
 
 echo "🚀 Setting up Zigman..."
@@ -62,7 +58,7 @@ echo "✨ Found latest version: $TARGET_VERSION"
 # ==========================================
 ASSET_NAME="zigman-${OS}-${ARCH}"
 DOWNLOAD_URL="https://github.com/$GITHUB_REPO/releases/download/${TARGET_VERSION}/${ASSET_NAME}"
-DEST_BINARY="$ZIGMAN_APP_DIR/zigman"
+DEST_BINARY="$ZIGMAN_APP_DIR"
 
 echo "⬇️  Downloading $ASSET_NAME..."
 if curl -fL -o "$DEST_BINARY" "$DOWNLOAD_URL"; then
@@ -75,19 +71,18 @@ else
 fi
 
 # ==========================================
-# STEP 5: Create config.json
+# STEP 5: Download config.json
 # ==========================================
-echo "📝 Writing default config.json..."
-cat << 'EOF' > "$ZIGMAN_DIR/config.json"
+echo "⬇️  Downloading default config.json..."
+CONFIG_URL="https://raw.githubusercontent.com/$GITHUB_REPO/main/config.json"
+if ! curl -sLf -o "$ZIGMAN_DIR/config.json" "$CONFIG_URL"; then
+    echo "⚠️  Note: Could not download config.json from GitHub. Creating a minimal fallback..."
+    cat << 'EOF' > "$ZIGMAN_DIR/config.json"
 {
-    "mirrorListUrl": "https://ziglang.org/download/community-mirrors.txt",
-    "minisignPubKey": "RWSGOq2NVecA2UPNdBUZykf1CCb147pkmdtYxgb3Ti+JO/wCYvhbAb/U",
-    "versionMapUrl": "https://ziglang.org/download/index.json",
-    "zlsVersionMapUrl": "https://releases.zigtools.org/",
-    "useColor": true,
-    "alwaysForceInstall": false
+    "versionMapUrl": "https://ziglang.org/download/index.json"
 }
 EOF
+fi
 
 # ==========================================
 # STEP 6: Append to shell profile

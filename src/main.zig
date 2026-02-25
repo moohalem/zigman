@@ -6,7 +6,7 @@ const cmd_list = @import("commands/list.zig");
 const cmd_uninstall = @import("commands/uninstall.zig");
 const cmd_use = @import("commands/use.zig");
 
-const APP_VERSION = "v1.0.0";
+const APP_VERSION = "v1.1.0";
 
 const Command = enum {
     install,
@@ -31,7 +31,7 @@ const HELP_TEXT =
     \\      zigman [command]
     \\
     \\VERSION:
-    \\      v1.0.0
+    \\      v1.1.0
     \\
     \\DESCRIPTION:
     \\      A very simple Zig version manager. Written in Zig.

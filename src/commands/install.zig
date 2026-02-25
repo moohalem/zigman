@@ -3,6 +3,9 @@ const builtin = @import("builtin");
 
 const downloader = @import("../core/downloader.zig");
 const extractor = @import("../core/extractor.zig");
+const fetch = @import("../core/fetch.zig");
+
+const minizign = @import("minizign");
 
 pub fn execute(allocator: std.mem.Allocator, version: []const u8, force: bool) !void {
     std.debug.print("* Preparing to install Zig {s}...\n", .{version});
@@ -18,10 +21,23 @@ pub fn execute(allocator: std.mem.Allocator, version: []const u8, force: bool) !
 
     const json_filename = "versions.json";
 
+    // Read config JSON (which was either fetched or exists)
+    const config_bytes = zigman_dir.readFileAlloc(allocator, "config.json", 1024 * 1024) catch |err| {
+        std.debug.print("Error: Could not read ~/.zigman/config.json.\n", .{});
+        return err;
+    };
+    defer allocator.free(config_bytes);
+
+    const config_parsed = try std.json.parseFromSlice(std.json.Value, allocator, config_bytes, .{});
+    defer config_parsed.deinit();
+
+    const mirror_list_url = config_parsed.value.object.get("mirrorListUrl").?.string;
+    const minisign_pub_key = config_parsed.value.object.get("minisignPubKey").?.string;
+
     zigman_dir.access(json_filename, .{}) catch |err| switch (err) {
         error.FileNotFound => {
             std.debug.print("  versions.json not found. Fetching from ziglang.org...\n", .{});
-            try fetchAndSaveJson(allocator, zigman_dir, json_filename);
+            try fetch.fetchAndSaveJson(allocator, zigman_dir, json_filename, "https://ziglang.org/download/index.json");
         },
         else => return err,
     };
@@ -70,12 +86,68 @@ pub fn execute(allocator: std.mem.Allocator, version: []const u8, force: bool) !
     const file_name = tarball_url[last_slash + 1 ..];
 
     // ==========================================
-    // STEP 4: Download and Extract
+    // STEP 4: Download from Mirrors and verify
     // ==========================================
-    std.debug.print("  Downloading {s}...\n", .{file_name});
+    std.debug.print("  Fetching community mirrors...\n", .{});
+    var mirrors = try fetch.fetchMirrors(allocator, mirror_list_url);
+    defer {
+        for (mirrors.items) |m| allocator.free(m);
+        mirrors.deinit(allocator);
+    }
 
-    // Use the downloader module
-    try downloader.downloadFile(allocator, zigman_dir, tarball_url, file_name);
+    var downloaded = false;
+
+    const prefix = "https://ziglang.org/";
+    const url_path = if (std.mem.startsWith(u8, tarball_url, prefix))
+        tarball_url[prefix.len..]
+    else
+        file_name; // Fallback
+
+    for (mirrors.items) |mirror| {
+        const base_mirror = if (std.mem.endsWith(u8, mirror, "/")) mirror[0 .. mirror.len - 1] else mirror;
+
+        const full_tarball_url = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ base_mirror, url_path });
+        defer allocator.free(full_tarball_url);
+
+        const full_sig_url = try std.fmt.allocPrint(allocator, "{s}/{s}.minisig", .{ base_mirror, url_path });
+        defer allocator.free(full_sig_url);
+
+        const sig_file_name = try std.fmt.allocPrint(allocator, "{s}.minisig", .{file_name});
+        defer allocator.free(sig_file_name);
+
+        std.debug.print("  Trying mirror: {s} ...\n", .{base_mirror});
+
+        // 1. Download Tarball
+        downloader.downloadFile(allocator, zigman_dir, full_tarball_url, file_name) catch |err| {
+            std.debug.print("    Failed to download tarball from mirror: {}\n", .{err});
+            continue; // Try next mirror
+        };
+
+        // 2. Download Signature
+        downloader.downloadFile(allocator, zigman_dir, full_sig_url, sig_file_name) catch |err| {
+            std.debug.print("    Failed to download signature from mirror: {}\n", .{err});
+            zigman_dir.deleteFile(file_name) catch {}; // cleanup partial
+            continue;
+        };
+
+        // 3. Verify Signature
+        std.debug.print("  Verifying signature...\n", .{});
+        if (verifySignature(allocator, zigman_dir, file_name, sig_file_name, minisign_pub_key)) {
+            downloaded = true;
+            zigman_dir.deleteFile(sig_file_name) catch {};
+            break;
+        } else |err| {
+            std.debug.print("    Signature verification failed: {}\n", .{err});
+            zigman_dir.deleteFile(file_name) catch {};
+            zigman_dir.deleteFile(sig_file_name) catch {};
+            continue;
+        }
+    }
+
+    if (!downloaded) {
+        std.debug.print("Error: Failed to safely download and verify Zig from any mirror.\n", .{});
+        return error.AllMirrorsFailed;
+    }
 
     std.debug.print("  Extracting into ~/.zigman/{s}/ ...\n", .{version});
 
@@ -88,24 +160,31 @@ pub fn execute(allocator: std.mem.Allocator, version: []const u8, force: bool) !
     std.debug.print("\n* Successfully installed Zig {s}!\n", .{version});
 }
 
-// Helper function to fetch and save the JSON
-fn fetchAndSaveJson(allocator: std.mem.Allocator, dir: std.fs.Dir, filename: []const u8) !void {
-    var client: std.http.Client = .{ .allocator = allocator };
-    defer client.deinit();
+fn verifySignature(allocator: std.mem.Allocator, dir: std.fs.Dir, file_name: []const u8, sig_file_name: []const u8, pub_key_str: []const u8) !void {
+    const sig_bytes = try dir.readFileAlloc(allocator, sig_file_name, 1024 * 10);
+    defer allocator.free(sig_bytes);
 
-    var file = try dir.createFile(filename, .{});
+    // Decode Signature
+    const sig = try minizign.Signature.decode(allocator, sig_bytes);
+
+    // Decode PublicKey
+    var pks_buf: [1]minizign.PublicKey = undefined;
+    const pks = try minizign.PublicKey.decode(&pks_buf, pub_key_str);
+    if (pks.len == 0) return error.NoPublicKeyFound;
+    const pk = pks[0];
+
+    // Initialize Verifier
+    var verifier = try pk.verifier(&sig);
+
+    var file = try dir.openFile(file_name, .{});
     defer file.close();
 
-    var file_buffer: [8192]u8 = undefined;
-    var file_writer = file.writer(&file_buffer);
+    var buf: [65536]u8 = undefined;
+    while (true) {
+        const bytes_read = try file.read(&buf);
+        if (bytes_read == 0) break;
+        verifier.update(buf[0..bytes_read]);
+    }
 
-    const fetch_res = try client.fetch(.{
-        .location = .{ .url = "https://ziglang.org/download/index.json" },
-        .method = .GET,
-        .response_writer = &file_writer.interface,
-    });
-
-    if (fetch_res.status != .ok) return error.DownloadFailed;
-
-    try file_writer.interface.flush();
+    try verifier.verify(allocator);
 }

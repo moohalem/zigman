@@ -1,4 +1,5 @@
 const std = @import("std");
+const fetch = @import("../core/fetch.zig");
 
 pub fn fetchVersions(allocator: std.mem.Allocator) !void {
     // ==========================================
@@ -16,10 +17,15 @@ pub fn fetchVersions(allocator: std.mem.Allocator) !void {
     // ==========================================
     // STEP 2: Read and Parse config.json
     // ==========================================
-    const config_bytes = zigman_dir.readFileAlloc(allocator, "config.json", 1024 * 1024) catch |err| {
-        std.debug.print("Error: Could not read ~/.zigman/config.json. Ensure it exists.\n", .{});
-        return err;
+    zigman_dir.access("config.json", .{}) catch |err| switch (err) {
+        error.FileNotFound => {
+            std.debug.print("  config.json not found. Downloading from GitHub...\n", .{});
+            try fetch.fetchAndSaveJson(allocator, zigman_dir, "config.json", "https://raw.githubusercontent.com/moohalem/zigman/main/config.json");
+        },
+        else => return err,
     };
+
+    const config_bytes = try zigman_dir.readFileAlloc(allocator, "config.json", 1024 * 1024);
     defer allocator.free(config_bytes);
 
     const config_parsed = try std.json.parseFromSlice(std.json.Value, allocator, config_bytes, .{});
