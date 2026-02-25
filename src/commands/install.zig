@@ -61,12 +61,16 @@ pub fn execute(allocator: std.mem.Allocator, version: []const u8, force: bool) !
         return error.TargetNotSupported;
     };
 
-    const tarball_url = target_obj.object.get("tarball").?.string;
+    const tarball_val = target_obj.object.get("tarball") orelse {
+        std.debug.print("Error: No tarball URL found for {s} in versions.json.\n", .{target_key});
+        return error.TarballNotFound;
+    };
+    const tarball_url = tarball_val.string;
     const last_slash = std.mem.lastIndexOf(u8, tarball_url, "/") orelse return error.InvalidUrl;
     const file_name = tarball_url[last_slash + 1 ..];
 
     // ==========================================
-    // STEP 4: Download and Extract (FIXED calls)
+    // STEP 4: Download and Extract
     // ==========================================
     std.debug.print("  Downloading {s}...\n", .{file_name});
 
@@ -84,28 +88,24 @@ pub fn execute(allocator: std.mem.Allocator, version: []const u8, force: bool) !
     std.debug.print("\n* Successfully installed Zig {s}!\n", .{version});
 }
 
+// Helper function to fetch and save the JSON
 fn fetchAndSaveJson(allocator: std.mem.Allocator, dir: std.fs.Dir, filename: []const u8) !void {
     var client: std.http.Client = .{ .allocator = allocator };
     defer client.deinit();
 
-    const uri = try std.Uri.parse("https://ziglang.org/download/index.json");
-    var header_buf: [8192]u8 = undefined;
-    var req = try client.open(.GET, uri, .{ .server_header_buffer = &header_buf });
-    defer req.deinit();
-
-    try req.send();
-    try req.finish();
-    try req.wait();
-
-    if (req.response.status != .ok) return error.DownloadFailed;
-
     var file = try dir.createFile(filename, .{});
     defer file.close();
 
-    var buffer: [8192]u8 = undefined;
-    while (true) {
-        const bytes_read = try req.read(&buffer);
-        if (bytes_read == 0) break;
-        try file.writeAll(buffer[0..bytes_read]);
-    }
+    var file_buffer: [8192]u8 = undefined;
+    var file_writer = file.writer(&file_buffer);
+
+    const fetch_res = try client.fetch(.{
+        .location = .{ .url = "https://ziglang.org/download/index.json" },
+        .method = .GET,
+        .response_writer = &file_writer.interface,
+    });
+
+    if (fetch_res.status != .ok) return error.DownloadFailed;
+
+    try file_writer.interface.flush();
 }

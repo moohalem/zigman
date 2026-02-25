@@ -24,11 +24,11 @@ pub fn execute(allocator: std.mem.Allocator) !void {
     defer zigman_dir.close();
 
     // Create an ArrayList to hold our version strings so we can sort them
-    var versions = std.ArrayList([]const u8).init(allocator);
+    var versions: std.ArrayListUnmanaged([]const u8) = .empty;
     defer {
         // We must free every duplicated string before freeing the list itself
         for (versions.items) |v| allocator.free(v);
-        versions.deinit();
+        versions.deinit(allocator);
     }
 
     // Iterate through ~/.zigman/
@@ -38,7 +38,7 @@ pub fn execute(allocator: std.mem.Allocator) !void {
         if (entry.kind == .directory and !std.mem.eql(u8, entry.name, "bin")) {
             // Duplicate the string so it safely lives in our ArrayList
             const v_name = try allocator.dupe(u8, entry.name);
-            try versions.append(v_name);
+            try versions.append(allocator, v_name);
         }
     }
 

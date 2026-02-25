@@ -26,16 +26,16 @@ pub fn execute(allocator: std.mem.Allocator, target: []const u8) !void {
         }
 
         // It is a number! Let's build the sorted list to find out which version it is.
-        var versions = std.ArrayList([]const u8).init(allocator);
+        var versions: std.ArrayListUnmanaged([]const u8) = .empty;
         defer {
             for (versions.items) |v| allocator.free(v);
-            versions.deinit();
+            versions.deinit(allocator);
         }
 
         var iter = zigman_dir.iterate();
         while (try iter.next()) |entry| {
             if (entry.kind == .directory and !std.mem.eql(u8, entry.name, "bin")) {
-                try versions.append(try allocator.dupe(u8, entry.name));
+                try versions.append(allocator, try allocator.dupe(u8, entry.name));
             }
         }
 
@@ -50,9 +50,8 @@ pub fn execute(allocator: std.mem.Allocator, target: []const u8) !void {
         target_version = try allocator.dupe(u8, versions.items[index - 1]);
         is_allocated = true; // Flag so we remember to free this specific string later
 
-    } else |err| {
+    } else |_| {
         // parseInt failed (e.g., they typed "0.14.0"), so we just treat it as the literal string.
-        _ = err;
     }
 
     // Clean up our dynamically allocated string if we generated one from the index

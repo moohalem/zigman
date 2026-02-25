@@ -3,22 +3,33 @@
 ZIGMAN is a lightweight, high-performance Zig version manager written entirely in Zig. It allows you to seamlessly switch between different compiler versions, ensuring your projects always build with the correct toolchain.
 ## 🚀 Features
 
-    Version Switching: Quickly toggle between stable and nightly Zig releases.
+    **Version Switching:** Quickly toggle between stable and nightly Zig releases using symlinks.
 
-    Zero Dependencies: Built using only the Zig Standard Library.
+    **Zero Dependencies:** Built using only the Zig Standard Library. No system tar, curl, or unzip required.
 
-    Lightweight: Minimal overhead and lightning-fast command execution.
+    **Native Extraction:** Downloads and decompresses .tar.xz archives natively in memory.
 
-## Donate
+    **Custom Mirrors:** Configurable via ~/.zigman/config.json to support community mirrors and alternative download sources.
 
-[Paypal](https://paypal.me/MohammadAlamsyah)
+    **Smart Uninstalls:** Easily remove old versions using a dynamically numbered list.
+
+## ☕ Donate
+
+If you find this tool helpful, consider buying me a coffee!
+[PayPal](paypal.me/MohammadAlamsyah)
 
 ## 🛠 Installation
-### Prerequisites
 
-    Zig Compiler (to build from source)
+### Option 1: Quick Install (Recommended)
 
-### Building from Source
+You can install Zigman and automatically configure your PATH by running our setup script:
+Bash
+
+`curl -sL https://raw.githubusercontent.com/mohalem/zigman/main/install.sh | bash`
+
+### Option 2: Building from Source
+
+If you already have Zig installed and want to compile ZIGMAN yourself:
 
     Clone the repository:
     Bash
@@ -26,15 +37,13 @@ ZIGMAN is a lightweight, high-performance Zig version manager written entirely i
     git clone https://github.com/mohalem/zigman.git
     cd zigman
 
-    Build the project:
+    Build the optimized binary:
     Bash
 
-    zig build-exe main.zig -O ReleaseSafe --name zigman
+    zig build -Doptimize=ReleaseFast
 
-    Move the binary to your PATH (optional):
-    Bash
-
-    mv ./zigman /usr/local/bin/
+    Run the manual setup:
+    Copy the resulting binary from ./zig-out/bin/zigman to a directory in your PATH (e.g., ~/.local/bin/ or /usr/local/bin/).
 
 ## 📖 Usage
 
@@ -44,27 +53,32 @@ Bash
 zigman [command] [arguments]
 
 ### Available Commands
-Command	-- Description --	Example
-install	-- Download and install a specific version -- zigman install 0.11.0
-uninstall	-- Remove a previously installed version	-- zigman uninstall 0.10.1
-use	-- Switch the active Zig version	-- zigman use 0.11.0
-list	-- Show all installed versions	-- zigman list
-fetch	-- See what versions are available online	-- zigman fetch
-help	-- Display usage information	-- zigman help
-version	-- Display the current ZIGMAN version	-- zigman version
+| Command | Description | Example |
+| :------ | :------ | :------ |
+|install|Download and install a specific version. Use -f to force reinstall.	|zigman install 0.14.0|
+|uninstall|	Remove a version by name or by its list index number.	|zigman uninstall 1 OR zigman uninstall 0.14.0|
+|use	|Switch the active globally linked Zig version.	|zigman use 0.14.0|
+|list	|Show all installed versions locally.	|zigman list|
+|fetch	|See what versions are available online.	|zigman fetch|
+|help	|Display usage information.	|zigman help|
+|version	|Display the current ZIGMAN version.	|zigman version|
+
 
 ## 🏗 Project Architecture
 
-ZIGMAN is designed with simplicity in mind. The current implementation handles CLI routing via a tagged union (Enum) and the Zig std.meta library.
-Code Structure
+ZIGMAN is designed with modularity and simplicity in mind, taking full advantage of Zig 0.15's robust standard library.
 
-    main.zig: The entry point. Handles memory allocation (GPA), argument parsing, and command dispatching.
+    src/main.zig: The entry point. Handles CLI routing and argument parsing.
 
-    Command Enum: Defines the internal API for supported actions.
+    src/commands/: Individual modules for each CLI action (install.zig, use.zig, etc.).
+
+    src/core/: Shared logic, including the HTTP downloader and the native .tar.xz extractor.
+
+    ~/.zigman/: The local environment where configurations (config.json), downloaded versions, and the active bin/zig symlink are managed.
 
 ## 🤝 Contributing
 
-Contributions are welcome! If you'd like to help implement the file system logic for version switching or the HTTP fetching for fetch, feel free to fork the repo and submit a PR.
+Contributions are welcome! Whether it is adding Windows .zip support, optimizing the extraction process, or fixing bugs, feel free to fork the repo and submit a PR.
 
     Fork the Project
 
@@ -76,8 +90,13 @@ Contributions are welcome! If you'd like to help implement the file system logic
 
     Open a Pull Request
 
-## 👤 Author
+## 📄 License
+
+Distributed under the MIT License. See LICENSE for more information.
+👤 Author
 
 Mohammad Alamsyah (moohalem)
 
     Email: mohalem.public@gmail.com
+
+    GitHub: @mohalem

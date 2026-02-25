@@ -31,7 +31,7 @@ const HELP_TEXT =
     \\      zigman [command]
     \\
     \\VERSION:
-    \\      v0.1.0
+    \\      v1.0.0
     \\
     \\DESCRIPTION:
     \\      A very simple Zig version manager. Written in Zig.
@@ -109,6 +109,10 @@ pub fn main() !void {
                 std.debug.print("Zigman version: {s}\n", .{APP_VERSION});
             },
         }
+    } else if (std.mem.eql(u8, cmd_str, "h")) {
+        std.debug.print("{s}", .{HELP_TEXT});
+    } else if (std.mem.eql(u8, cmd_str, "v")) {
+        std.debug.print("Zigman version: {s}\n", .{APP_VERSION});
     } else {
         std.debug.print("Command '{s}' is not recognized.\n", .{cmd_str});
         std.debug.print("Run 'zigman help' for usage information\n", .{});
